@@ -20,8 +20,8 @@ const UserRoleSchema = new mongoose.Schema(
       type: Object,
       default: {},
       required: true
-    }
-
+    },
+    priority: { type: Number, required: true }, // Thêm trường priority
   },
   {
     versionKey: false,
@@ -32,6 +32,7 @@ const UserRoleSchema = new mongoose.Schema(
     minimize: false
   }
 );
+UserRoleSchema.index({ userId: 1 });
 
 const UserRoleModel = mongoose.model("User_Role", UserRoleSchema);
 

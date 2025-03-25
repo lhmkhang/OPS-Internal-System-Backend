@@ -7,6 +7,7 @@ const userSchema = new mongoose.Schema(
     password: { type: String, require: true },
     fullName: { type: String, require: true },
     refreshToken: { type: String, default: "" },
+    lineManager: { type: mongoose.Schema.Types.ObjectId, ref: 'Users', default: null }
   },
   {
     versionKey: false,

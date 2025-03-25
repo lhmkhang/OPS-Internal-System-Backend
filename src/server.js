@@ -3,6 +3,7 @@ const path = require("path");
 const initUserApiRoutes = require("./routers/userApiRouters.js");
 const initWebRoutes = require("./routers/webRouters.js");
 const initWheelApiRoutes = require("./routers/WheelApiRouters.js");
+const initProjectApiRoutes = require("./routers/projectRoutes.js");
 const serverConfiguration = require("./configs/server.config.js");
 const connectDB = require("./helpers/connectDB.js");
 const dotenv = require("dotenv").config({ path: path.resolve(__dirname, "..", "docker.env") });
@@ -158,6 +159,7 @@ io.on('connection', (socket) => {
 // Configuration of express server
 serverConfiguration(app);
 
+initProjectApiRoutes(app);
 initWheelApiRoutes(app);
 initUserApiRoutes(app);
 initWebRoutes(app);

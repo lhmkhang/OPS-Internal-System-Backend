@@ -19,8 +19,10 @@ const verifyJWTToken = (req, res, next) => {
   if (token) {
     jwt.verify(token, process.env.ACCESS_TOKEN_SECRET_KEY, (err, decoded) => {
       if (err) return next(new handleMessage(MESSAGE.AUTH.VERIFY_TOKEN.TOKEN_EXPIRED, StatusCodes.UNAUTHORIZED)); //invalid token
+
       req.user = decoded.UserInfo.username;
       req.roles = decoded.UserInfo.roles;
+      req.userId = decoded.UserInfo.userId;
       next();
     });
   } else {

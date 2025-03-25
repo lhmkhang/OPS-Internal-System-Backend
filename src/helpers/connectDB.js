@@ -50,7 +50,19 @@ let retries = 0;
 
 const connectDB = async () => {
   try {
-    await mongoose.connect(process.env.DB_CONNECTION_STRING, {
+    const ENVIRONMENT = process.env.NODE_ENV;
+    let CONNECTION_STRING;
+
+    if (ENVIRONMENT === 'development') {
+      CONNECTION_STRING = process.env.DB_DEV_CONNECTION_STRING;
+    } else {
+      CONNECTION_STRING = process.env.DB_CONNECTION_STRING;
+    }
+
+    console.log(CONNECTION_STRING);
+
+
+    await mongoose.connect(CONNECTION_STRING, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });
