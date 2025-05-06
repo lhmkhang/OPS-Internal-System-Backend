@@ -28,7 +28,7 @@ const handleCreateProjectPlan = async (req, res, next) => {
 const handleUpdateProjectPlan = async (req, res, next) => {
     try {
         const { projectId } = req.params;
-        const updatedProject = await updateProjectPlan(projectId, req.body);
+        const updatedProject = await updateProjectPlan(projectId, req);
         return res.status(StatusCodes.OK).json({
             status: 'success',
             code: StatusCodes.OK,
@@ -140,7 +140,6 @@ const handleUpsertProjectPlanDaily = async (req, res, next) => {
 const handleGetProjectPlanDaily = async (req, res, next) => {
     try {
         const { workingDate } = req.query;
-
         const result = await getProjectPlanDaily(workingDate);
         return res.status(StatusCodes.OK).json({
             status: 'success',

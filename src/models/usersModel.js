@@ -7,6 +7,9 @@ const usersSchema = new Schema({
   group: { type: String },                                 // Nhóm của user
   groupId: { type: mongoose.Schema.Types.ObjectId, ref: 'project_user_groups', default: null },
   groupProjectId: { type: mongoose.Schema.Types.ObjectId, ref: 'group_projects', default: null },
+  workingShift: { type: String, required: true },          // Ca làm việc
+  location: { type: String, required: true },              // Địa điểm
+  floor: { type: String, required: true },                 // Tầng
 },
   {
     versionKey: false,
@@ -15,7 +18,6 @@ const usersSchema = new Schema({
       updatedAt: "modifiedDate",
     }
   },
-
 );
 
 const UsersModel = mongoose.model('project_user', usersSchema);

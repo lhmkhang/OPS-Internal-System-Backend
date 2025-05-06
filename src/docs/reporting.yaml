@@ -1,0 +1,72 @@
+openapi: 3.0.0
+info:
+  title: Reporting API
+  version: 1.0.0
+  description: API lấy report mistake cho hệ thống QC
+servers:
+  - url: /api/reporting
+paths:
+  /mistake-report:
+    get:
+      summary: Lấy danh sách report mistake theo project và ngày
+      tags:
+        - Reporting
+      parameters:
+        - in: query
+          name: projectId
+          required: true
+          schema:
+            type: string
+          description: Project ID
+        - in: query
+          name: date
+          required: true
+          schema:
+            type: string
+            format: date
+          description: Ngày cần truy vấn (yyyy-mm-dd)
+      responses:
+        '200':
+          description: Danh sách report mistake
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            batchName:
+                              type: string
+                            documentId:
+                              type: string
+                            keyer:
+                              type: string
+                            record_idx:
+                              type: integer
+                            taskName:
+                              type: string
+                            capturedDate:
+                              type: string
+                            type:
+                              type: string
+                            total:
+                              type: integer
+                            created_time:
+                              type: string
+                              format: date-time
+                      total:
+                        type: integer
+                  message:
+                    type: string
+        '400':
+          description: Thiếu hoặc sai tham số
+        '500':
+          description: Lỗi server 

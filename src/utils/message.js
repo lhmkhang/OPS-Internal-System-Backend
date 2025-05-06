@@ -24,4 +24,9 @@ module.exports = {
       LOG_OUT_ERROR: "Session does not exist!",
     },
   },
+  REPORTING: {
+    MISSING_PARAMS: 'ProjectId and date are required',
+    GET_MISTAKE_REPORT_SUCCESS: 'Get mistake report success',
+    INTERNAL_SERVER_ERROR: 'Internal server error',
+  },
 };

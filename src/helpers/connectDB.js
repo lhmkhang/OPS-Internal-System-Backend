@@ -59,9 +59,6 @@ const connectDB = async () => {
       CONNECTION_STRING = process.env.DB_CONNECTION_STRING;
     }
 
-    console.log(CONNECTION_STRING);
-
-
     await mongoose.connect(CONNECTION_STRING, {
       useNewUrlParser: true,
       useUnifiedTopology: true,

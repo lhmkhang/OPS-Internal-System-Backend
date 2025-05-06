@@ -7,13 +7,14 @@ const initProjectApiRoutes = require("./routers/projectRoutes.js");
 const serverConfiguration = require("./configs/server.config.js");
 const connectDB = require("./helpers/connectDB.js");
 const dotenv = require("dotenv").config({ path: path.resolve(__dirname, "..", "docker.env") });
-const logger = require("./helpers/logger");
+const logger = require("./helpers/logger.js");
 const loggerInfo = logger.getLogger("infoLogger");
 const app = express();
 const initAuthorizationRoutes = require("./routers/authorization.js");
 // const { UserRoleModel } = require("./models/UserRoleModel");
 const http = require("http");
 const socketIo = require("socket.io");
+const initReportingApiRoutes = require("./routers/reportingApiRouters.js");
 
 // Connect to mongoDB
 connectDB();
@@ -165,6 +166,9 @@ initUserApiRoutes(app);
 initWebRoutes(app);
 // initAuthorizationRoutes(app);
 
+// Mount API reporting
+initReportingApiRoutes(app);
+
 app.use((err, req, res, next) => {
   err.statusCode = err.statusCode || 500;
   err.status = err.status || "error";
@@ -185,7 +189,7 @@ app.use((err, req, res, next) => {
   loggerInfo.info(`Express server is running on port ${process.env.PORT}`);
 }); */
 
-server.listen(process.env.PORT || 8090, () => {
+server.listen(process.env.PORT || 8091, () => {
   loggerInfo.info(`Express server is running on port ${process.env.PORT}`);
 });
 

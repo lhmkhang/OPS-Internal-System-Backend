@@ -24,8 +24,8 @@ const handleLogout = async (req, res, next) => {
 };
 
 const handleCreateProjectUser = async (req, res, next) => {
-  const { username, fullName, group, groupProjectId } = req.body;
-  userServices.createProjectUser(username, fullName, group, groupProjectId, res, next);
+  const { username, fullName, group, groupProjectId, workingShift, location, floor } = req.body;
+  userServices.createProjectUser(username, fullName, group, groupProjectId, workingShift, location, floor, res, next);
 };
 
 const handleUpdateUserAvailability = async (req, res, next) => {
@@ -43,8 +43,8 @@ const handleDeleteProjectUser = async (req, res, next) => {
 };
 
 const handleUpdateProjectUser = async (req, res, next) => {
-  const { userId, username, fullName, group, groupProjectId } = req.body;
-  userServices.updateProjectUser(userId, username, fullName, group, groupProjectId, res, next);
+  const { userId, username, fullName, group, groupProjectId, workingShift, location, floor } = req.body;
+  userServices.updateProjectUser(userId, username, fullName, group, groupProjectId, workingShift, location, floor, res, next);
 };
 
 module.exports = { handleLogin, handleCreateNewUser, handleChangePassword, handleLogout, handleCreateProjectUser, handleUpdateUserAvailability, handleGetAllUsers, handleDeleteProjectUser, handleUpdateProjectUser };

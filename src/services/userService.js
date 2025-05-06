@@ -90,28 +90,48 @@ const userLogin = async (username, password, req, res, next) => {
     const userId = foundUser._id.toString();
 
     // Lấy tất cả role của user từ user_roles
-    const userRoles = await UserRoleModel.find({ userId }).sort({ priority: 1 }); // Priority thấp = ưu tiên cao
+
+    const userRoles = await UserRoleModel.find({ userId: { $in: [userId] } }).select('role priority -_id').lean();
+
+    if (!userRoles || userRoles.length === 0) {
+      return {
+        currentUser: {
+          userId,
+          username: currentUser.username,
+          roles: [{ role: 'VIEWER', priority: Infinity }],
+        }
+      };
+    }
+
+    const primaryRole = userRoles.reduce((prev, curr) =>
+      prev.priority < curr.priority ? prev : curr,
+      userRoles[0]
+    );
+
+    /* const userRoles = await UserRoleModel.find({ userId }).sort({ priority: 1 }); // Priority thấp = ưu tiên cao
+
     if (!userRoles.length)
       return next(
         new handleMessage(
           "User has no roles assigned",
           StatusCodes.FORBIDDEN
         )
-      );
+      ); */
 
     // Chuẩn bị dữ liệu roles cho token
-    const roles = userRoles.map(role => ({
-      _id: role._id,
-      role: role.role,
-      priority: role.priority,
-    }));
+    /*  const roles = userRoles.map(role => ({
+       _id: role._id,
+       role: role.role,
+       priority: role.priority,
+     })); */
 
     // Tạo accessToken và refreshToken
     const accessToken = JWTService.createToken({
       UserInfo: {
         userId,
         username,
-        roles, // Mảng roles thay vì object đơn
+        roles: [primaryRole],
+        fullName: foundUser.fullName
       },
     });
 
@@ -119,7 +139,8 @@ const userLogin = async (username, password, req, res, next) => {
       UserInfo: {
         userId,
         username,
-        roles,
+        roles: [primaryRole],
+        fullName: foundUser.fullName
       },
     });
 
@@ -129,45 +150,12 @@ const userLogin = async (username, password, req, res, next) => {
     return res.json({
       accessToken,
       refreshToken,
-      roles, // Trả mảng roles để UI biết
+      roles: [primaryRole], // Trả mảng roles để UI biết
     });
   } catch (err) {
     next(err);
   }
 };
-
-/* 
-const userLogout = async (req, res, next) => {
-  try {
-    if (!req.session || !req.session.user)
-      return next(
-        new handleMessage(
-          MESSAGE.AUTH.LOG_OUT.LOG_OUT_ERROR,
-          StatusCodes.FORBIDDEN
-        )
-      );
-
-    const userID = req.session.user.userID;
-
-    //Delete refreshToken in database after logout
-    await UserModel.findByIdAndUpdate(userID, { refreshToken: "" });
-
-    //Delete user'ss session in Redis
-    req.session.destroy();
-
-    //Clear cookie in the client's browser
-    res.clearCookie("connect.sid");
-
-    return res.send({
-      status: "success",
-      code: StatusCodes.OK,
-      message: MESSAGE.AUTH.LOG_OUT.LOG_OUT_SUCCESS,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
- */
 
 const userLogout = async (req, res, next) => {
   try {
@@ -255,7 +243,7 @@ const changePassword = async (username, password, req, res, next) => {
 };
 
 // Tạo user mới cho dự án
-const createProjectUser = async (username, fullName, group, groupProjectId, res, next) => {
+const createProjectUser = async (username, fullName, group, groupProjectId, workingShift, location, floor, res, next) => {
   try {
     // Kiểm tra dữ liệu đầu vào
     if (!username || !fullName) {
@@ -263,17 +251,29 @@ const createProjectUser = async (username, fullName, group, groupProjectId, res,
         new handleMessage('Username and fullName are required', StatusCodes.BAD_REQUEST)
       );
     }
-
     if (!group) {
       return next(
         new handleMessage('Group name is required', StatusCodes.BAD_REQUEST)
       );
     }
-
-    // Kiểm tra groupProjectId
     if (!groupProjectId) {
       return next(
         new handleMessage('Group project is required', StatusCodes.BAD_REQUEST)
+      );
+    }
+    if (!workingShift) {
+      return next(
+        new handleMessage('Working shift is required', StatusCodes.BAD_REQUEST)
+      );
+    }
+    if (!location) {
+      return next(
+        new handleMessage('Location is required', StatusCodes.BAD_REQUEST)
+      );
+    }
+    if (!floor) {
+      return next(
+        new handleMessage('Floor is required', StatusCodes.BAD_REQUEST)
       );
     }
 
@@ -283,7 +283,6 @@ const createProjectUser = async (username, fullName, group, groupProjectId, res,
         new handleMessage('Invalid group project ID', StatusCodes.BAD_REQUEST)
       );
     }
-
     const groupProject = await GroupProjectsModel.findById(groupProjectId);
     if (!groupProject) {
       return next(
@@ -307,10 +306,9 @@ const createProjectUser = async (username, fullName, group, groupProjectId, res,
     if (existingGroup) {
       // Trường hợp 1: Group có sẵn
       groupId = existingGroup._id;
-      teamLeaderId = existingGroup.teamLeader; // Giữ nguyên teamLeader
+      teamLeaderId = existingGroup.teamLeader;
     } else {
       // Trường hợp 2: Group mới (custom)
-      // Tìm user trong UserModel dựa trên groupName (giả định khớp với fullName)
       const teamLeaderUser = await UserModel.findOne({ fullName: group });
       if (!teamLeaderUser) {
         return next(
@@ -330,26 +328,19 @@ const createProjectUser = async (username, fullName, group, groupProjectId, res,
       groupId = newGroup._id;
     }
 
-    // Tạo user mới trong project_users với groupId và groupProjectId
+    // Tạo user mới trong project_users với tất cả các field
     const newUser = await UsersModel.create({
       username,
       fullName,
       group,
       groupId,
-      groupProjectId, // Lưu groupProjectId thay vì name
+      groupProjectId,
+      workingShift,
+      location,
+      floor,
     });
 
     loggerInfo.info(`Project user ${username} created successfully`);
-
-    console.log({
-      userId: newUser._id,
-      username: newUser.username,
-      fullName: newUser.fullName,
-      group: newUser.group,
-      groupId: newUser.groupId,
-      groupProjectId: newUser.groupProjectId, // Trả về groupProjectId
-    });
-
 
     return res.send({
       status: 'success',
@@ -361,13 +352,161 @@ const createProjectUser = async (username, fullName, group, groupProjectId, res,
         fullName: newUser.fullName,
         group: newUser.group,
         groupId: newUser.groupId,
-        groupProjectId: newUser.groupProjectId, // Trả về groupProjectId
+        groupProjectId: newUser.groupProjectId,
+        workingShift: newUser.workingShift,
+        location: newUser.location,
+        floor: newUser.floor,
       },
     });
   } catch (error) {
     next(error);
   }
 };
+
+// Cập nhật thông tin user trong project_users dựa trên userId
+const updateProjectUser = async (userId, username, fullName, group, groupProjectId, workingShift, location, floor, res, next) => {
+  try {
+    // Kiểm tra dữ liệu đầu vào
+    if (!userId) {
+      return next(
+        new handleMessage('User ID is required', StatusCodes.BAD_REQUEST)
+      );
+    }
+    if (!fullName) {
+      return next(
+        new handleMessage('fullName is required', StatusCodes.BAD_REQUEST)
+      );
+    }
+    if (!group) {
+      return next(
+        new handleMessage('Group name is required', StatusCodes.BAD_REQUEST)
+      );
+    }
+    if (!groupProjectId) {
+      return next(
+        new handleMessage('Group project is required', StatusCodes.BAD_REQUEST)
+      );
+    }
+    if (!workingShift) {
+      return next(
+        new handleMessage('Working shift is required', StatusCodes.BAD_REQUEST)
+      );
+    }
+    if (!location) {
+      return next(
+        new handleMessage('Location is required', StatusCodes.BAD_REQUEST)
+      );
+    }
+    if (!floor) {
+      return next(
+        new handleMessage('Floor is required', StatusCodes.BAD_REQUEST)
+      );
+    }
+
+    // Kiểm tra userId có hợp lệ không
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return next(
+        new handleMessage('Invalid user ID', StatusCodes.BAD_REQUEST)
+      );
+    }
+
+    // Kiểm tra user tồn tại trong project_users
+    const existingUser = await UsersModel.findById(userId);
+    if (!existingUser) {
+      return next(
+        new handleMessage('User not found', StatusCodes.NOT_FOUND)
+      );
+    }
+
+    // Kiểm tra groupProjectId có hợp lệ và tồn tại trong GroupProjectsModel
+    if (!mongoose.Types.ObjectId.isValid(groupProjectId)) {
+      return next(
+        new handleMessage('Invalid group project ID', StatusCodes.BAD_REQUEST)
+      );
+    }
+    const groupProject = await GroupProjectsModel.findById(groupProjectId);
+    if (!groupProject) {
+      return next(
+        new handleMessage('Group project not found', StatusCodes.NOT_FOUND)
+      );
+    }
+
+    // Kiểm tra username mới có bị trùng với user khác không
+    const duplicateUser = await UsersModel.findOne({ username, _id: { $ne: userId } });
+    if (duplicateUser) {
+      return next(
+        new handleMessage('Username already exists', StatusCodes.CONFLICT)
+      );
+    }
+
+    let groupId = null;
+    let teamLeaderId = null;
+
+    // Kiểm tra group trong project_user_groups
+    let existingGroup = await UserGroupModel.findOne({ groupName: group });
+    if (existingGroup) {
+      // Trường hợp 1: Group có sẵn
+      groupId = existingGroup._id;
+      teamLeaderId = existingGroup.teamLeader;
+    } else {
+      // Trường hợp 2: Group mới (custom)
+      const teamLeaderUser = await UserModel.findOne({ fullName: group });
+      if (!teamLeaderUser) {
+        return next(
+          new handleMessage(
+            `No user found with fullName '${group}' to set as team leader`,
+            StatusCodes.BAD_REQUEST
+          )
+        );
+      }
+      teamLeaderId = teamLeaderUser._id;
+
+      // Tạo group mới
+      const newGroup = await UserGroupModel.create({
+        groupName: group,
+        teamLeader: teamLeaderId,
+      });
+      groupId = newGroup._id;
+    }
+
+    // Cập nhật user trong project_users với tất cả các field
+    const updatedUser = await UsersModel.findByIdAndUpdate(
+      userId,
+      {
+        username,
+        fullName,
+        group,
+        groupId,
+        groupProjectId,
+        workingShift,
+        location,
+        floor,
+      },
+      { new: true } // Trả về document đã cập nhật
+    );
+
+    loggerInfo.info(`Project user ${username} updated successfully`);
+    return res.send({
+      status: 'success',
+      code: StatusCodes.OK,
+      message: 'Project user updated successfully',
+      data: {
+        userId: updatedUser._id,
+        username: updatedUser.username,
+        fullName: updatedUser.fullName,
+        group: updatedUser.group,
+        groupId: updatedUser.groupId,
+        groupProjectId: updatedUser.groupProjectId,
+        workingShift: updatedUser.workingShift,
+        location: updatedUser.location,
+        floor: updatedUser.floor,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // Cập nhật hoặc tạo user availability
 const updateUserAvailability = async (userId, fte, workingDate, res, next) => {
   try {
@@ -401,12 +540,20 @@ const updateUserAvailability = async (userId, fte, workingDate, res, next) => {
     // Nếu bản ghi đã tồn tại, kiểm tra xem fte có thay đổi không
     if (existingAvailability) {
       if (existingAvailability.fte === fte) {
-        // Không có thay đổi, trả về thông báo không cần cập nhật
         return res.send({
           status: 'success',
           code: StatusCodes.OK,
           message: 'No changes detected in user availability',
-          data: existingAvailability,
+          data: {
+            ...existingAvailability.toObject(),
+            username: user.username,
+            fullName: user.fullName,
+            groupName: user.group,
+            groupProjectId: user.groupProjectId,
+            workingShift: user.workingShift,
+            location: user.location,
+            floor: user.floor,
+          },
         });
       }
     }
@@ -428,7 +575,16 @@ const updateUserAvailability = async (userId, fte, workingDate, res, next) => {
       status: 'success',
       code: StatusCodes.OK,
       message: 'User availability updated successfully',
-      data: availability,
+      data: {
+        ...availability.toObject(),
+        username: user.username,
+        fullName: user.fullName,
+        groupName: user.group,
+        groupProjectId: user.groupProjectId,
+        workingShift: user.workingShift,
+        location: user.location,
+        floor: user.floor,
+      },
     });
   } catch (error) {
     next(error);
@@ -498,129 +654,6 @@ const deleteProjectUser = async (userId, res, next) => {
   }
 };
 
-// Cập nhật thông tin user trong project_users dựa trên userId
-const updateProjectUser = async (userId, username, fullName, group, groupProjectId, res, next) => {
-  try {
-    // Kiểm tra dữ liệu đầu vào
-    if (!userId) {
-      return next(
-        new handleMessage('User ID is required', StatusCodes.BAD_REQUEST)
-      );
-    }
-    if (!fullName) {
-      return next(
-        new handleMessage('fullName are required', StatusCodes.BAD_REQUEST)
-      );
-    }
-    if (!group) {
-      return next(
-        new handleMessage('Group name is required', StatusCodes.BAD_REQUEST)
-      );
-    }
-    if (!groupProjectId) {
-      return next(
-        new handleMessage('Group project is required', StatusCodes.BAD_REQUEST)
-      );
-    }
-
-    // Kiểm tra userId có hợp lệ không
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
-      return next(
-        new handleMessage('Invalid user ID', StatusCodes.BAD_REQUEST)
-      );
-    }
-
-    // Kiểm tra user tồn tại trong project_users
-
-    const existingUser = await UsersModel.findById(userId);
-    if (!existingUser) {
-      return next(
-        new handleMessage('User not found', StatusCodes.NOT_FOUND)
-      );
-    }
-
-    // Kiểm tra groupProjectId có hợp lệ và tồn tại trong GroupProjectsModel
-    if (!mongoose.Types.ObjectId.isValid(groupProjectId)) {
-      return next(
-        new handleMessage('Invalid group project ID', StatusCodes.BAD_REQUEST)
-      );
-    }
-    const groupProject = await GroupProjectsModel.findById(groupProjectId);
-    if (!groupProject) {
-      return next(
-        new handleMessage('Group project not found', StatusCodes.NOT_FOUND)
-      );
-    }
-
-    // Kiểm tra username mới có bị trùng với user khác không
-    const duplicateUser = await UsersModel.findOne({ username, _id: { $ne: userId } });
-    if (duplicateUser) {
-      return next(
-        new handleMessage('Username already exists', StatusCodes.CONFLICT)
-      );
-    }
-
-    let groupId = null;
-    let teamLeaderId = null;
-
-    // Kiểm tra group trong project_user_groups
-    let existingGroup = await UserGroupModel.findOne({ groupName: group });
-    if (existingGroup) {
-      // Trường hợp 1: Group có sẵn
-      groupId = existingGroup._id;
-      teamLeaderId = existingGroup.teamLeader; // Giữ nguyên teamLeader
-    } else {
-      // Trường hợp 2: Group mới (custom)
-      const teamLeaderUser = await UserModel.findOne({ fullName: group });
-      if (!teamLeaderUser) {
-        return next(
-          new handleMessage(
-            `No user found with fullName '${group}' to set as team leader`,
-            StatusCodes.BAD_REQUEST
-          )
-        );
-      }
-      teamLeaderId = teamLeaderUser._id;
-
-      // Tạo group mới
-      const newGroup = await UserGroupModel.create({
-        groupName: group,
-        teamLeader: teamLeaderId,
-      });
-      groupId = newGroup._id;
-    }
-
-    // Cập nhật user trong project_users
-    const updatedUser = await UsersModel.findByIdAndUpdate(
-      userId,
-      {
-        username,
-        fullName,
-        group,
-        groupId,
-        groupProjectId,
-      },
-      { new: true } // Trả về document đã cập nhật
-    );
-
-    loggerInfo.info(`Project user ${username} updated successfully`);
-    return res.send({
-      status: 'success',
-      code: StatusCodes.OK,
-      message: 'Project user updated successfully',
-      data: {
-        userId: updatedUser._id,
-        username: updatedUser.username,
-        fullName: updatedUser.fullName,
-        group: updatedUser.group,
-        groupId: updatedUser.groupId,
-        groupProjectId: updatedUser.groupProjectId,
-      },
-    });
-  } catch (error) {
-    next(error);
-  }
-};
 
 module.exports = {
   createNewUser,

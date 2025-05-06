@@ -1,0 +1,210 @@
+openapi: 3.0.3
+info:
+  title: Planning API
+  version: 1.0.0
+  description: |
+    API phục vụ module planning: phân quyền, truy vấn user, project, assignment, FTE... theo từng role (ADMIN, PROJECT_MANAGER, LINE_MANAGER, TEAM_LEADER, VIEWER).
+    
+    > Tham khảo chi tiết logic tại [.cursor/rules/planning-logic.mdc](../../.cursor/rules/planning-logic.mdc)
+servers:
+  - url: /api/planning
+
+security:
+  - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    UserFTE:
+      type: object
+      properties:
+        userId:
+          type: string
+        fte:
+          type: number
+        workingDate:
+          type: string
+          format: date
+    ProjectAssignment:
+      type: object
+      properties:
+        userId:
+          type: string
+        projectId:
+          type: string
+        projectName:
+          type: string
+        steps:
+          type: array
+          items:
+            type: object
+    UserByRole:
+      type: object
+      properties:
+        userId:
+          type: string
+        username:
+          type: string
+        fullName:
+          type: string
+        group:
+          type: string
+        groupId:
+          type: string
+        groupProjectId:
+          type: string
+        workingShift:
+          type: string
+        location:
+          type: string
+        floor:
+          type: string
+    Project:
+      type: object
+      properties:
+        projectId:
+          type: string
+        projectName:
+          type: string
+        customerName:
+          type: string
+        steps:
+          type: object
+        slaTarget:
+          type: number
+        projectManagers:
+          type: array
+          items:
+            type: string
+        createdDate:
+          type: string
+          format: date-time
+        modifiedDate:
+          type: string
+          format: date-time
+
+paths:
+  /resource-availability:
+    get:
+      summary: Get Resource Availability
+      description: >
+        Trả về danh sách user dưới quyền và FTE của từng user theo ngày làm việc. Phạm vi user trả về phụ thuộc vào role (ADMIN, PROJECT_MANAGER, LINE_MANAGER, TEAM_LEADER, VIEWER).
+      parameters:
+        - in: query
+          name: workingDate
+          schema:
+            type: string
+            format: date
+          required: false
+          description: Ngày làm việc (YYYY-MM-DD). Nếu không truyền sẽ lấy ngày hiện tại.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Danh sách user và FTE
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/UserFTE'
+        '401':
+          description: Unauthorized
+
+  /project-user-assignments:
+    get:
+      summary: Get Project User Assignments
+      description: >
+        Trả về danh sách assignment (user được assign vào project/step nào) thuộc phạm vi quản lý của user hiện tại. Mapping assignment với projectName từ ProjectsPlan.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Danh sách assignment
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProjectAssignment'
+        '401':
+          description: Unauthorized
+
+  /users-by-role:
+    get:
+      summary: Get Users By Role
+      description: >
+        Trả về danh sách user, group, project, customer, location, floor, workingShift, projectManagers phù hợp với quyền của user hiện tại.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Danh sách user và các thông tin liên quan
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/UserByRole'
+                  groupNames:
+                    type: array
+                    items:
+                      type: object
+                  groupProjects:
+                    type: array
+                    items:
+                      type: object
+                  customers:
+                    type: array
+                    items:
+                      type: object
+                  projectManagers:
+                    type: array
+                    items:
+                      type: object
+                  locations:
+                    type: array
+                    items:
+                      type: object
+                  floors:
+                    type: array
+                    items:
+                      type: object
+                  workingShifts:
+                    type: array
+                    items:
+                      type: object
+        '401':
+          description: Unauthorized
+
+  /project-assigned:
+    get:
+      summary: Get Project Assigned
+      description: >
+        Trả về danh sách project mà user hiện tại có quyền quản lý hoặc liên quan. Phạm vi project trả về phụ thuộc vào role.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Danh sách project
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  projects:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Project'
+        '401':
+          description: Unauthorized 
