@@ -45,4 +45,8 @@ const projectPlanDailySchema = new mongoose.Schema({
 
 projectPlanDailySchema.index({ projectId: 1, workingDate: 1 }, { unique: true });
 
-module.exports = mongoose.model('project_plan_daily', projectPlanDailySchema);
+// Export schema và collectionName thay vì model
+module.exports = {
+    schema: projectPlanDailySchema,
+    collectionName: 'project_plan_daily'
+};

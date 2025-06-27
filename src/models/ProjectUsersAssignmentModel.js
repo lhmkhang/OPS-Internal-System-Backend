@@ -28,5 +28,8 @@ const projectUsersAssignmentSchema = new mongoose.Schema({
 
 projectUsersAssignmentSchema.index({ userId: 1, projectId: 1 });
 
-const ProjectUsersAssignmentModel = mongoose.model('project_users_assignment', projectUsersAssignmentSchema);
-module.exports = { ProjectUsersAssignmentModel };
+// Export schema và collectionName thay vì model
+module.exports = {
+    schema: projectUsersAssignmentSchema,
+    collectionName: 'project_users_assignment'
+};

@@ -20,7 +20,7 @@ const projectPlanSchema = new mongoose.Schema({
     slaTarget: { type: Number, default: null },
     projectManagers: [{
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'users', // Tham chiếu tới collection 'users'
+        ref: 'users', // Tham chiếu tới collection 'users
     }],
 }, {
     versionKey: false,
@@ -33,4 +33,8 @@ const projectPlanSchema = new mongoose.Schema({
 // Thêm index cho projectManagers để query nhanh
 projectPlanSchema.index({ projectManagers: 1 });
 
-module.exports = mongoose.model('projects_plan', projectPlanSchema);
+// Export schema và collection name thay vì model
+module.exports = {
+    schema: projectPlanSchema,
+    collectionName: 'projects_plans'
+};

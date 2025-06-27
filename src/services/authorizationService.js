@@ -5,7 +5,14 @@ const JWTService = require("./JWTServices");
 const { StatusCodes } = require("http-status-codes");
 const handleMessage = require("../utils/HandleMessage");
 const MESSAGE = require("../utils/message");
-const { UserModel } = require("../models/userModel");
+const { schema: UserSchema, collectionName: UserCollectionName } = require("../models/userModel");
+const { getConnection } = require('../helpers/connectDB');
+
+// Lấy connection default
+const connection = getConnection('default');
+
+// Tạo model từ schema
+const UserModel = connection.model(UserCollectionName, UserSchema);
 
 const getPermission = async (req, res, next) => {
     try {

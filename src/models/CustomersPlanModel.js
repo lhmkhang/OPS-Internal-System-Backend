@@ -8,5 +8,8 @@ const CustomerPlanModelSchema = new Schema({
     timestamps: { createdAt: "createdDate", updatedAt: "modifiedDate" }
 });
 
-const CustomersPlanModel = mongoose.model('customers_plan', CustomerPlanModelSchema);
-module.exports = { CustomersPlanModel };
+// Export schema và collectionName thay vì model
+module.exports = {
+    schema: CustomerPlanModelSchema,
+    collectionName: 'customers_plan'
+};

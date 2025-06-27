@@ -20,5 +20,8 @@ const usersSchema = new Schema({
   },
 );
 
-const UsersModel = mongoose.model('project_user', usersSchema);
-module.exports = { UsersModel };
+// Export schema và collectionName thay vì model
+module.exports = {
+  schema: usersSchema,
+  collectionName: 'project_user'
+};

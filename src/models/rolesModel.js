@@ -21,5 +21,8 @@ const RoleSchema = new mongoose.Schema(
   }
 );
 
-const RoleModel = mongoose.model("Role", RoleSchema);
-module.exports = { RoleModel };
+// Export schema và collectionName thay vì model
+module.exports = {
+  schema: RoleSchema,
+  collectionName: 'Role'
+};

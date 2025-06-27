@@ -9,5 +9,8 @@ const groupSchema = new Schema({
     timestamps: { createdAt: "createdDate", updatedAt: "modifiedDate" }
 });
 
-const GroupsModel = mongoose.model('groups', groupSchema);
-module.exports = { GroupsModel };
+// Export schema và collectionName thay vì model
+module.exports = {
+    schema: groupSchema,
+    collectionName: 'groups'
+};

@@ -24,5 +24,8 @@ const ReportSchema = new mongoose.Schema(
     }
 );
 
-const ReportModel = mongoose.model("Role", ReportSchema);
-module.exports = { ReportModel };
+// Export schema và collectionName thay vì model
+module.exports = {
+    schema: ReportSchema,
+    collectionName: 'Role'  // Giữ nguyên tên collection
+};

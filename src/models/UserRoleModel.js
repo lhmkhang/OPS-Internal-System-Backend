@@ -34,6 +34,8 @@ const UserRoleSchema = new mongoose.Schema(
 );
 UserRoleSchema.index({ userId: 1 });
 
-const UserRoleModel = mongoose.model("User_Role", UserRoleSchema);
-
-module.exports = { UserRoleModel };
+// Export schema và collectionName thay vì model
+module.exports = {
+  schema: UserRoleSchema,
+  collectionName: 'User_Role'
+};

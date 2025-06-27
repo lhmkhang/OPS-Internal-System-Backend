@@ -13,6 +13,8 @@ const projectSchema = new mongoose.Schema({
     }
 });
 
-const Project = mongoose.model('project_store', projectSchema);
-
-module.exports = Project;
+// Export schema và collectionName thay vì model
+module.exports = {
+    schema: projectSchema,
+    collectionName: 'project_store'
+};

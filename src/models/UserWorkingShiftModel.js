@@ -15,5 +15,8 @@ const userWorkingShiftSchema = new Schema({
 
 );
 
-const UserWorkingShiftModel = mongoose.model('user_working_shift', userWorkingShiftSchema);
-module.exports = { UserWorkingShiftModel };
+// Export schema và collectionName thay vì model
+module.exports = {
+    schema: userWorkingShiftSchema,
+    collectionName: 'user_working_shift'
+};

@@ -1,7 +1,14 @@
 const jwt = require("jsonwebtoken");
 const path = require("path");
-const { UserModel } = require("../models/userModel");
+const { schema: UserSchema, collectionName: UserCollectionName } = require("../models/userModel");
+const { getConnection } = require('../helpers/connectDB');
 require("dotenv").config({ path: path.resolve(__dirname, "../..", ".env") });
+
+// Lấy connection default
+const connection = getConnection('default');
+
+// Tạo model từ schema
+const UserModel = connection.model(UserCollectionName, UserSchema);
 
 const createToken = (payload) => {
   const token = jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET_KEY, {

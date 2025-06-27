@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const TurnWheelModel = require("./TurnWheelModel");
 
 const userSchema = new mongoose.Schema(
   {
@@ -18,14 +17,8 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-userSchema.post('save', async function (doc, next) {
-  try {
-    const result = await TurnWheelModel.create({ username: doc.username, quantity: 1 });
-  } catch (err) {
-    console.log(err);
-  }
-});
-
-const UserModel = mongoose.model("User", userSchema);
-
-module.exports = { UserModel };
+// Export schema và collectionName thay vì model
+module.exports = {
+  schema: userSchema,
+  collectionName: 'User'
+};

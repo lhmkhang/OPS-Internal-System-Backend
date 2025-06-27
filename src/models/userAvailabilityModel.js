@@ -13,5 +13,8 @@ const userAvailabilitySchema = new Schema({
     }
 });
 
-const UserAvailabilityModel = mongoose.model('project_users_availability', userAvailabilitySchema);
-module.exports = { UserAvailabilityModel };
+// Export schema và collectionName thay vì model
+module.exports = {
+    schema: userAvailabilitySchema,
+    collectionName: 'project_users_availability'
+};

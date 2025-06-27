@@ -15,5 +15,8 @@ const usersSchema = new Schema({
 
 );
 
-const UserGroupModel = mongoose.model('project_user_groups', usersSchema);
-module.exports = { UserGroupModel };
+// Export schema và collectionName thay vì model
+module.exports = {
+  schema: usersSchema,
+  collectionName: 'project_user_groups'
+};

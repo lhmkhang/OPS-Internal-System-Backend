@@ -14,5 +14,8 @@ const userLocationSchema = new Schema({
 
 );
 
-const UserLocationModel = mongoose.model('user_location', userLocationSchema);
-module.exports = { UserLocationModel };
+// Export schema và collectionName thay vì model
+module.exports = {
+    schema: userLocationSchema,
+    collectionName: 'user_location'
+};

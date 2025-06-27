@@ -14,5 +14,8 @@ const userFloorSchema = new Schema({
 
 );
 
-const UserFloorModel = mongoose.model('user_floor', userFloorSchema);
-module.exports = { UserFloorModel };
+// Export schema và collectionName thay vì model
+module.exports = {
+    schema: userFloorSchema,
+    collectionName: 'user_floor'
+};
